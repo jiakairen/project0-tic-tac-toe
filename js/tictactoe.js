@@ -8,7 +8,8 @@ const playerPos = {
     square: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     naughtWon: 0,
     squareWon: 0,
-    drawNumber: 0
+    drawNumber: 0,
+    disputed: 0,
 };
 
 function whoIsPlaying () {
@@ -27,9 +28,7 @@ function whoIsNotPlaying () {
     }
 };
 
-function flipPlayer () {
-    naughtPlaying = !naughtPlaying;
-};
+function flipPlayer () { naughtPlaying = !naughtPlaying; };
 
 function sendLocation (player, boxID) {
     const shortID = Number(boxID[1]);
@@ -39,7 +38,6 @@ function sendLocation (player, boxID) {
         flipPlayer();
         return true;
     } else {
-
         return false;
     }
 };
@@ -63,31 +61,25 @@ function checkForWin (player) {
     return [false, undefined];
 };
 
-function winnerIsPresent () {
-    return winner !== undefined;
-};
+function winnerIsPresent () { return winner !== undefined; };
 
 function checkDraw () {
-    if ((math.sum(playerPos.naught) + math.sum(playerPos.square)) === 9 && (winner === undefined) && !isDraw) {
-        playerPos.drawNumber += 1;
+    if (movesPlayed() === 9 && (winner === undefined) && !isDraw) {
+        playerPos.drawNumber++;
         isDraw = true;
         return true;
-    } else {
-        return false;
     }
+    return false;
 };
 
 function checkNextPlayer () {
     if (naughtPlaying) {
         return 'naught';
-    } else {
-        return 'square';
-    }
+    } 
+    return 'square';
 };
 
-function getResults () {
-    return [playerPos.naughtWon, playerPos.squareWon, playerPos.drawNumber];
-};
+function getResults () { return [playerPos.naughtWon, playerPos.squareWon, playerPos.drawNumber]; };
 
 function newGame (toggleChoiceIsNaught) {
     playerPos.naught = [0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -101,11 +93,12 @@ function clearResults () {
     playerPos.naughtWon = 0;
     playerPos.squareWon = 0;
     playerPos.drawNumber = 0;
+    playerPos.disputed = 0;
 };
 
 function changeFirstPlayer (event) {
     const toggleID = event.target.id.split('-')[0];
-    if ((math.sum(playerPos.naught) + math.sum(playerPos.square)) === 0) {
+    if (movesPlayed() === 0) {
         if (toggleID === 'naught') {
             naughtPlaying = true;
         } else {
@@ -117,10 +110,105 @@ function changeFirstPlayer (event) {
     }
 };
 
-function turnOnAI () {
-    console.log('AI on');
+function movesPlayed () { return (math.sum(playerPos.naught) + math.sum(playerPos.square)) };
+
+function disputedResult () {
+    if (winner === undefined && movesPlayed() > 0) {
+        playerPos.disputed += 1;
+    }
+    return playerPos.disputed;
 };
 
-function turnOffAI () {
-    console.log('AI off');
+function findEmptyBoxes () {
+    const occupiedBoxes = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const emptyBoxes = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const emptyIndices = [];
+    for (let i = 0; i < playerPos.naught.length; i++) {
+        occupiedBoxes[i] = (playerPos.naught[i] || playerPos.square[i]) === 1;
+    }
+    for (let i = 0; i < playerPos.naught.length; i++) {
+        emptyBoxes[i] = !occupiedBoxes[i];
+        if (emptyBoxes[i]) {
+            emptyIndices.push(i);
+        }
+    }
+    return emptyIndices;
 };
+
+function minimax (newBoard, player) {
+    const emptyBoxes = findEmptyBoxes(newBoard);
+    if (checkForWin(player)[0] && player === 'naught'){
+        return -10;
+    } else if (checkForWin(player)[0] && player === 'square') {
+        return +10;
+    } else if (!checkForWin(player)[0] && checkDraw()) {
+        return 0;
+    }
+
+    const moves = [];
+
+    for (let i = 0; i < emptyBoxes.length; i++) {
+        const thisMove = {};
+
+        // thisMove.index = playerPos[player][emptyBoxes[i]];
+        thisMove.index = newBoard[emptyBoxes[i]];
+        playerPos[player][emptyBoxes[i]] = 1;
+
+        console.log(`testing ${thisMove}`)
+
+        if (player === 'square') {
+            let result = minimax(playerPos.naught, 'naught');
+            console.log(`if ${result}`);
+            thisMove.score = result.score;
+        } else {
+            let result = minimax(playerPos.square, 'square');
+            console.log(`else ${result}`);
+            // thisMove.score = result.score;
+            thisMove.score = 0;
+        }
+
+        playerPos[player][emptyBoxes[i]] = 0;
+        // flipPlayer ();
+        moves.push(thisMove);
+    }
+
+    let bestMove;
+    if (player === 'square') {
+        let bestScore = -10000;
+        for (let i = 0; i < moves.length; i++) {
+            if (moves[i].score > bestScore) {
+                bestScore = moves[i].score;
+                bestMove = i;
+            }
+        }
+    } else {
+        let bestScore = 10000;
+        for (let i = 0; i < moves.length; i++) {
+            if (moves[i].score < bestScore) {
+                bestScore = moves[i].score;
+                bestMove = i;
+            }
+        }
+    }
+
+    return moves[bestMove];
+};
+
+// function reverseLocation (player, boxID) {
+//     const shortID = Number(boxID[1]);
+//     if (playerPos[player][shortID] === 1) {
+//         playerPos[player][shortID] = 0;
+//         console.log(`reversed ${ boxID }`);
+//     }
+// };
+
+function dumbAI () {
+    const emptyBoxes = findEmptyBoxes ();
+    const randomIndex = Math.floor(Math.random()*(emptyBoxes.length));
+    const boxToPick = emptyBoxes[randomIndex];
+    const boxID = 'b' + boxToPick;
+    sendLocation('square', boxID);
+    return boxID;
+};
+
+function turnOffAI () { console.log('AI off'); };
