@@ -139,9 +139,9 @@ input[type='button']:active {
     transform: scale(0.9);
 }
 
-#ai-play.pulse {
+/* #ai-play.pulse {
     animation: pulse 1s infinite;
-}
+} */
 
 #ai-play div {
     margin: auto;
@@ -212,7 +212,7 @@ input[type='button']:active {
 .results {
     display: inline-block;
     width: 25%;
-    padding: 10px;
+    padding: 25px;
 }
 
 .results h2 {
