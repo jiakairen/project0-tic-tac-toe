@@ -43,30 +43,21 @@ function sendLocation (player, boxID) {
     }
 };
 
-function checkForWin (player, optionalBoard=undefined) {
+function checkForWin (player) {
     //  returns true if the board position of 'player' matches one of the winningCombos
-    //  allows an optionalBoard to be passed in without altering the originalBoard
-
-    let playerPosCopy = playerPos;
-    if (optionalBoard !== undefined) {
-        playerPosCopy = {
-            naught: optionalBoard.naught,
-            square: optionalBoard.square
-        };
-    }
 
     const winningCombos = ['012', '345', '678', '036', '147', '258', '048', '246'];
     for (let i = 0; i < winningCombos.length; i++) {
         const comboToCheck = winningCombos[i].split('');
         let foundMatch = 0;
         for (let j = 0; j < comboToCheck.length; j++) {
-            if (playerPosCopy[player][comboToCheck[j]] === 1) {
+            if (playerPos[player][Number(comboToCheck[j])] === 1) {
                 foundMatch++;
             }
         }
         if (foundMatch === 3) {
             winner = player;
-            playerPosCopy[`${ player }Won`]++;
+            playerPos[`${ player }Won`]++;
             return [true, comboToCheck];
         }
     }
@@ -134,8 +125,8 @@ function disputedResult () {
 };
 
 function findEmptyBoxes () {
-    // returns an [array] containing indices of empty boxes
-    // with potential to return an [array] containing indices of occupied boxes
+    // returns an [array] containing indices of empty boxes and
+    // and [array] of occupied and unoccupied boxes represented by 1 and 0 respectively.
 
     const occupiedBoxes = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     const emptyBoxes = [0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -149,80 +140,68 @@ function findEmptyBoxes () {
             emptyIndices.push(i);
         }
     }
-    return emptyIndices;
+    return [emptyIndices, occupiedBoxes];
 };
 
-function minimax (position, player) {
-    const emptyBoxes = findEmptyBoxes(position);
-    const copyOfPlayerPos = {
-        naught: playerPos.naught,
-        square: playerPos.square
-    };
+function bestMove () {
+    let emptyBoxes = findEmptyBoxes()[0];
+    let bestScore = -Infinity;
+    let move;
+    for (let i = 0; i < emptyBoxes.length; i++) {
+        playerPos.square[emptyBoxes[i]] = 1;
+        const board = findEmptyBoxes()[1];
+        let score = minimax(board, 0, false);
+        playerPos.square[emptyBoxes[i]] = 0;
+        if (score > bestScore) {
+            bestScore = score;
+            move = emptyBoxes[i];
+        }
+    }
+    playerPos.square[move] = 1;
+    flipPlayer();
+    winner = undefined;
+    isDraw = false;
+    return 'b' + move;
+};
 
-    if (checkForWin(player, copyOfPlayerPos)[0] && player === 'naught'){
-        return -10;
-    } else if (checkForWin(player, copyOfPlayerPos)[0] && player === 'square') {
-        return +10;
-    } else if (!checkForWin(player, copyOfPlayerPos)[0] && checkDraw()) {
+function minimax (board, depth, isMaximasing) {
+    if (checkForWin('square')[0]) {
+        winner = undefined;
+        playerPos.squareWon--;
+        return 10 - depth;
+    } else if (checkForWin('naught')[0]) {
+        winner = undefined;
+        playerPos.naughtWon--;
+        return depth - 10;
+    } else if (checkDraw()) {
+        playerPos.drawNumber--;
+        isDraw = false;
         return 0;
     }
 
-    const moves = [];
-    for (let i = 0; i < emptyBoxes.length; i++) {
-        const thisMove = {
-            index: undefined,
-            score: undefined
-        };
-
-        thisMove.index = emptyBoxes[i];
-        copyOfPlayerPos[player][emptyBoxes[i]] = 1;
-
-        console.log(`testing ${thisMove.index}`)
-
-        if (player === 'square') {
-            let result = minimax(copyOfPlayerPos.naught, 'naught');
-            thisMove.score = result.score;
-        } else {
-            let result = minimax(copyOfPlayerPos.square, 'square');
-            thisMove.score = result.score;
+    if (isMaximasing) {
+        //  when AI - square is playing
+        
+        let emptyBoxes = findEmptyBoxes()[0];
+        let bestScore = -Infinity;
+        for (let i = 0; i < emptyBoxes.length; i++) {
+            playerPos.square[emptyBoxes[i]] = 1;
+            const board = findEmptyBoxes()[1];
+            let score = minimax(board, depth + 1, false);
+            playerPos.square[emptyBoxes[i]] = 0;
+            bestScore = Math.max(score, bestScore);
         }
-
-        // copyOfPlayerPos[player][emptyBoxes[i]] = 0;
-        // flipPlayer();
-        moves.push(thisMove);
-        console.log(moves);
-
-    }
-
-    let bestMove;
-    if (player === 'square') {
-        let bestScore = -10000;
-        for (let i = 0; i < moves.length; i++) {
-            if (moves[i].score > bestScore) {
-                bestScore = moves[i].score;
-                bestMove = i;
-            }
-        }
+        return bestScore;
     } else {
-        let bestScore = 10000;
-        for (let i = 0; i < moves.length; i++) {
-            if (moves[i].score < bestScore) {
-                bestScore = moves[i].score;
-                bestMove = i;
-            }
+        let emptyBoxes = findEmptyBoxes()[0];
+        let bestScore = Infinity;
+        for (let i = 0; i < emptyBoxes.length; i++) {
+            playerPos.naught[emptyBoxes[i]] = 1;
+            const board = findEmptyBoxes()[1];
+            let score = minimax(board, depth + 1, true);
+            playerPos.naught[emptyBoxes[i]] = 0;
+            bestScore = Math.min(score, bestScore);
         }
+        return bestScore;
     }
-
-    return moves[bestMove];
-};
-
-function randomPick () {
-    // picks a random empty box and produces its html ID
-
-    const emptyBoxes = findEmptyBoxes ();
-    const randomIndex = Math.floor(Math.random()*(emptyBoxes.length));
-    const boxToPick = emptyBoxes[randomIndex];
-    const boxID = 'b' + boxToPick;
-    sendLocation('square', boxID);
-    return boxID;
 };

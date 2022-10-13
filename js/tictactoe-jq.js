@@ -46,7 +46,7 @@ $(document).ready(function () {
             const nextPlayer = whoIsPlaying();
             $nextPlayer.html(`<div id='next-move'>Next move:</div> <div class='${ nextPlayer } animate' id='next-move-symbol'></div>`);
 
-            // run dumb AI if AI is on ///////////////////////
+            // run AI if AI is on ///////////////////////
             if (nextPlayer === 'square' && $main.hasClass('ai-click')) {
                 runAI();
                 if (!winnerIsPresent()) {
@@ -54,7 +54,6 @@ $(document).ready(function () {
                     $nextPlayer.html(`<div id='next-move'>Next move:</div> <div class='naught animate' id='next-move-symbol'></div>`);
                 }
             }
-
         } else {
             //  proceed here if clicked on an already played box
             $this.children().removeClass('animate');
@@ -199,7 +198,7 @@ $(document).ready(function () {
     function runAI () {
         // asks AI algorithm to pick a box to play then update it on board
 
-        const boxPickedByAI = randomPick();  // change which box picking algorithm to run here
+        const boxPickedByAI = bestMove();  // change which box picking algorithm to run here
         $(`#${ boxPickedByAI }`).addClass('played').append($('<div></div>').hide().addClass('square').fadeIn(200));
         const [foundWin, winningCombo] = checkForWin('square');
         if (foundWin) {
