@@ -185,10 +185,10 @@ function minimax (board, depth, isMaximasing) {
         let emptyBoxes = findEmptyBoxes()[0];
         let bestScore = -Infinity;
         for (let i = 0; i < emptyBoxes.length; i++) {
-            playerPos.square[emptyBoxes[i]] = 1;
-            const board = findEmptyBoxes()[1];
-            let score = minimax(board, depth + 1, false);
-            playerPos.square[emptyBoxes[i]] = 0;
+            playerPos.square[emptyBoxes[i]] = 1;            // setting testing box
+            const board = findEmptyBoxes()[1];              // gets current board state
+            let score = minimax(board, depth + 1, false);   // next recursion is minimising
+            playerPos.square[emptyBoxes[i]] = 0;            // unsetting testing box
             bestScore = Math.max(score, bestScore);
         }
         return bestScore;
@@ -196,10 +196,10 @@ function minimax (board, depth, isMaximasing) {
         let emptyBoxes = findEmptyBoxes()[0];
         let bestScore = Infinity;
         for (let i = 0; i < emptyBoxes.length; i++) {
-            playerPos.naught[emptyBoxes[i]] = 1;
-            const board = findEmptyBoxes()[1];
-            let score = minimax(board, depth + 1, true);
-            playerPos.naught[emptyBoxes[i]] = 0;
+            playerPos.naught[emptyBoxes[i]] = 1;            // setting testing box
+            const board = findEmptyBoxes()[1];              // gets current board state
+            let score = minimax(board, depth + 1, true);    // next recursion is maximising
+            playerPos.naught[emptyBoxes[i]] = 0;            // unsetting testing box
             bestScore = Math.min(score, bestScore);
         }
         return bestScore;

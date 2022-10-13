@@ -121,7 +121,7 @@ $(document).ready(function () {
                 }, 50);
                 const disputedNumber = disputedResult();
 
-                if (disputedNumber > 0 && movesPlayed() > 0 && !winnerIsPresent()) {
+                if (disputedNumber > 0 && movesPlayed() > 0 && !winnerIsPresent() && !isDraw) {
                     // flash the hidden 'Disputed' counter
                     $disputedResult.hide().html(`Disputed: <p id="disputed-times">${ disputedNumber }</p>`).fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
                 }

@@ -9,6 +9,11 @@ You can play the game by clicking [here](https://jiakairen.github.io/project0-ti
 
 ---
 
+## Languages
+* HTML, JS and CSS
+
+---
+
 ## Features
 * The 'How to play' section on the homepage explains the user interface buttons.
 * The AI play can be switched on at any time during the game play, which uses the minimax search algorithm.
@@ -20,19 +25,22 @@ You can play the game by clicking [here](https://jiakairen.github.io/project0-ti
 
 ## Known Issues
 * The AI causes a short period of lag picking the first move when it's moving first. It may appear to be frozen and causing the user to click on new game again and in turn causing more lag.
-* The AI may place its first symbol before symbols from the last round clear when restarting a round. Resulting in two symbols are squeezed into one box short a short period of time.
+* Due to the above issue, the AI may place its first symbol before symbols from the last round clear when restarting a round. Resulting in two symbols squeezed into one box for a short period of time.
+* When the user is trying to flip the board when the AI play mode is on and AI is the first player to play, it might appear that the user needs to hold down on the board for longer than 1 second. However in reality, 1 second is enough and it is the AI that's lagging. The board doesn't flip until the AI has calculated its first move.
 * The page does not rescale properly when window width is decreased.
 
 ---
 
 ## Future Plan
-I would like to make the UI responsive when used on smaller screens.
+* Making the UI responsive when used on smaller screens.
+* When user chooses to switch 'who plays first' when the game has already started, prompt the user to choose if they want to restart the game instead of not allowing anything.
 
 ---
 
 ## Resources Used
 * math.js
 * animate.css
+* jQuery
 
 ---
 
