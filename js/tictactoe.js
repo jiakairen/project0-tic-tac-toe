@@ -118,7 +118,7 @@ function changeFirstPlayer (event) {
 function movesPlayed () { return (math.sum(playerPos.naught) + math.sum(playerPos.square)) };
 
 function disputedResult () {
-    if (winner === undefined && movesPlayed() > 0) {
+    if (winner === undefined && movesPlayed() > 0 && !isDraw) {
         playerPos.disputed += 1;
     }
     return playerPos.disputed;
@@ -181,7 +181,7 @@ function minimax (board, depth, isMaximasing) {
 
     if (isMaximasing) {
         //  when AI - square is playing
-        
+
         let emptyBoxes = findEmptyBoxes()[0];
         let bestScore = -Infinity;
         for (let i = 0; i < emptyBoxes.length; i++) {

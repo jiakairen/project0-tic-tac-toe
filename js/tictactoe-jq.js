@@ -50,7 +50,6 @@ $(document).ready(function () {
             if (nextPlayer === 'square' && $main.hasClass('ai-click')) {
                 runAI();
                 if (!winnerIsPresent()) {
-                    const nextPlayer = 'naught';
                     $nextPlayer.html(`<div id='next-move'>Next move:</div> <div class='naught animate' id='next-move-symbol'></div>`);
                 }
             }
@@ -70,31 +69,19 @@ $(document).ready(function () {
         }
     });
 
-    $('#new-game-button').on('click', function () {
-        newGame(toggleChoiceIsNaught());    // pass in current 'who starts first' selection
-        clearBoard();
-        checkIfAIShouldRun();
-    });
-
-    $('#clear-results-button').on('click', function () {
-        clearResults();                     // extra elements to clear
-        updateResults();                    // extra elements to clear
-        newGame(toggleChoiceIsNaught());    // pass in current 'who starts first' selection
-        clearBoard();
-        deleteDisputedLine();               // extra elements to clear
-        checkIfAIShouldRun();
-    });
+    $('#new-game-button').on('click', newGameButtonPressed);
+    $('#clear-results-button').on('click', clearResultsButtonPressed);
 
     $('.toggle').on('click', function (event) {
         if (changeFirstPlayer(event)) {
-            //  change 'who starts first' permitted by changeFirstPlayer()
+            //  change 'who starts first' permitted by changeFirstPlayer(), proceed to switch player
 
             const playerPlaying = whoIsPlaying();
             const playerNotPlaying = whoIsNotPlaying();
             whoStarts[`$${ playerPlaying }Starts`].removeClass('fade');
             whoStarts[`$${ playerNotPlaying }Starts`].addClass('fade');
         } else {
-            //  change 'who starts first' NOT permitted by changeFirstPlayer()
+            //  change 'who starts first' NOT permitted by changeFirstPlayer(), shake both bottons
 
             $toggleHousing.removeClass('animate');
             setTimeout(function () {
@@ -136,13 +123,13 @@ $(document).ready(function () {
 
                 if (disputedNumber > 0 && movesPlayed() > 0 && !winnerIsPresent()) {
                     // flash the hidden 'Disputed' counter
-
                     $disputedResult.hide().html(`Disputed: <p id="disputed-times">${ disputedNumber }</p>`).fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
                 }
                 newGame(toggleChoiceIsNaught());    // restarts the round when board is flipped
                 clearBoard();
+                checkIfAIShouldRun();
             }
-        }, 1000);
+        }, 1000);   // millisecond the user must hold down on mouse
     }).on('mouseup mouseleave', function () {
         //  if the user does not hold for 1 second, nothing happens
         clearTimeout(flipTimer);
@@ -163,6 +150,19 @@ $(document).ready(function () {
         // update 'instruction' section to show who wins
         $nextPlayer.addClass('animate-win').html(`<div class='${ playerPlaying }' id='next-move-symbol'></div>wins!`);
         updateResults();
+    };
+
+    function newGameButtonPressed () {
+        newGame(toggleChoiceIsNaught());    // pass in current 'who starts first' selection
+        clearBoard();
+        checkIfAIShouldRun();
+    };
+
+    function clearResultsButtonPressed () {
+        newGameButtonPressed();
+        clearResults();
+        updateResults();
+        deleteDisputedLine();
     };
 
     function updateResults () {
@@ -198,7 +198,7 @@ $(document).ready(function () {
     function runAI () {
         // asks AI algorithm to pick a box to play then update it on board
 
-        const boxPickedByAI = bestMove();  // change which box picking algorithm to run here
+        const boxPickedByAI = bestMove();   // this is linked to minimax
         $(`#${ boxPickedByAI }`).addClass('played').append($('<div></div>').hide().addClass('square').fadeIn(200));
         const [foundWin, winningCombo] = checkForWin('square');
         if (foundWin) {
