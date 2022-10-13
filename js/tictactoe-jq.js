@@ -1,23 +1,26 @@
+// Jiakai Ren - SEI57 - Project 0 Tic Tac Toe
+
 $(document).ready(function () {
     const $smallBox = $('.small-box');              // individual boxes on board
     const $nextPlayer = $('.instruction');          // text above board
     const $main = $('.main');                       // main gaming section
     const whoStarts = {
-        $naughtStarts: $('#naught-starts'),         // who starts first toggle
-        $squareStarts: $('#square-starts')          // who starts first toggle
+        $naughtStarts: $('#naught-starts'),         // 'who starts first' button
+        $squareStarts: $('#square-starts')          // 'who starts first' button
     };      
-    const $toggleHousing = $('.toggle-housing');    // who starts first toggle container
+    const $toggleHousing = $('.toggle-housing');    // who starts first options container
     const $naughtsWon = $('#naughts-won');          // result
     const $squaresWon = $('#squares-won');          // result
     const $drawTimes = $('#draw-times');            // result
-    const $aiPlay = $('#ai-play');
+    const $aiPlay = $('#ai-play');                  // AI play button
     const $board = $('.boxes');                     // small-box container
-    const $disputedResult = $('#disputed-result');
-    let flipTimer;
+    const $disputedResult = $('#disputed-result');  // hidden result
+    let flipTimer;                                  // setTimeout for board flipping animation
 
     $smallBox.on('click', function (event) {
         const $this = $(this);
         if (!winnerIsPresent() && !checkDraw() && !$this.hasClass('played')) {
+            //  only proceed here if the box has not been played
             $this.addClass('played');
             const playerPlaying = whoIsPlaying();
 
@@ -32,27 +35,28 @@ $(document).ready(function () {
                 }, 50);
             }
 
-            //  check for win ////////////////////
+            //  check for win   ////////////////////////////
             const [foundWin, winningCombo] = checkForWin(playerPlaying);
             if (foundWin) {
                 celebrateWin(winningCombo, playerPlaying);
                 return;
             }
 
-            //  display instruction
-            const nextPlayer = checkNextPlayer();
+            //  display instruction //////////////////////////
+            const nextPlayer = whoIsPlaying();
             $nextPlayer.html(`<div id='next-move'>Next move:</div> <div class='${ nextPlayer } animate' id='next-move-symbol'></div>`);
 
-            // dumb AI
+            // run dumb AI if AI is on ///////////////////////
             if (nextPlayer === 'square' && $main.hasClass('ai-click')) {
-                runDumbAI();
+                runAI();
                 if (!winnerIsPresent()) {
                     const nextPlayer = 'naught';
                     $nextPlayer.html(`<div id='next-move'>Next move:</div> <div class='naught animate' id='next-move-symbol'></div>`);
                 }
             }
 
-        } else {                        //  clicking on already played boxes
+        } else {
+            //  proceed here if clicked on an already played box
             $this.children().removeClass('animate');
             setTimeout(function () {
                 $this.children().addClass('animate');
@@ -60,6 +64,7 @@ $(document).ready(function () {
         }
 
         if (checkDraw()) {
+            //  only proceed here if no winner has been found and all boxes have been played
             $smallBox.children().addClass('fade');
             $nextPlayer.html(`Draw!`).addClass('draw-animation');
             updateResults();
@@ -67,31 +72,31 @@ $(document).ready(function () {
     });
 
     $('#new-game-button').on('click', function () {
-        newGame(toggleChoiceIsNaught());
+        newGame(toggleChoiceIsNaught());    // pass in current 'who starts first' selection
         clearBoard();
-        if ($main.hasClass('ai-click') && whoIsPlaying() === 'square') {
-            runDumbAI();
-        }
+        checkIfAIShouldRun();
     });
 
     $('#clear-results-button').on('click', function () {
-        clearResults();
-        updateResults();
-        newGame(toggleChoiceIsNaught());
+        clearResults();                     // extra elements to clear
+        updateResults();                    // extra elements to clear
+        newGame(toggleChoiceIsNaught());    // pass in current 'who starts first' selection
         clearBoard();
-        deleteDisputedLine();
-        if ($main.hasClass('ai-click') && whoIsPlaying() === 'square') {
-            runDumbAI();
-        }
+        deleteDisputedLine();               // extra elements to clear
+        checkIfAIShouldRun();
     });
 
     $('.toggle').on('click', function (event) {
         if (changeFirstPlayer(event)) {
+            //  change 'who starts first' permitted by changeFirstPlayer()
+
             const playerPlaying = whoIsPlaying();
             const playerNotPlaying = whoIsNotPlaying();
             whoStarts[`$${ playerPlaying }Starts`].removeClass('fade');
             whoStarts[`$${ playerNotPlaying }Starts`].addClass('fade');
         } else {
+            //  change 'who starts first' NOT permitted by changeFirstPlayer()
+
             $toggleHousing.removeClass('animate');
             setTimeout(function () {
                 $toggleHousing.addClass('animate');
@@ -105,20 +110,23 @@ $(document).ready(function () {
             $(this).html(`<div>ON</div>`);
         } else {
             $(this).html(`<div class="fade">OFF</div>`);
-            turnOffAI();
         }
         if (whoIsPlaying() === 'square') {
-            runDumbAI();
+            //  if it's current square's turn, runAI() immediately
+            runAI();
         }
     });
 
     whoStarts.$squareStarts.on('click', function () {
         if ($main.hasClass('ai-click')) {
-            runDumbAI();
+            //  if AI play is already on, runAI() immediately
+            runAI();
         }
     });
 
     $board.on('mousedown', function (event) {
+        // allows user to 'flip the board' when the round has already started by holding down on the edge of the board
+
         flipTimer = setTimeout( function () {
             if (event.target.id === 'board-edge' && movesPlayed() > 0) {
                 $board.removeClass('flip-table-animate');
@@ -126,18 +134,23 @@ $(document).ready(function () {
                     $board.addClass('flip-table-animate');
                 }, 50);
                 const disputedNumber = disputedResult();
+
                 if (disputedNumber > 0 && movesPlayed() > 0 && !winnerIsPresent()) {
+                    // flash the hidden 'Disputed' counter
+
                     $disputedResult.hide().html(`Disputed: <p id="disputed-times">${ disputedNumber }</p>`).fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
                 }
-                newGame(toggleChoiceIsNaught());
+                newGame(toggleChoiceIsNaught());    // restarts the round when board is flipped
                 clearBoard();
             }
         }, 1000);
     }).on('mouseup mouseleave', function () {
+        //  if the user does not hold for 1 second, nothing happens
         clearTimeout(flipTimer);
     });
 
     function celebrateWin (winningCombo, playerPlaying) {
+        // add 'winner' class to symbols that caused the win and then animate
         for (let i = 0; i < winningCombo.length; i++) {
             $(`#b${ winningCombo[i] }`).addClass('winner');
         }
@@ -147,6 +160,8 @@ $(document).ready(function () {
         setTimeout(function () {
             $winningBoxes.children().addClass('animate-win');
         }, 50);
+
+        // update 'instruction' section to show who wins
         $nextPlayer.addClass('animate-win').html(`<div class='${ playerPlaying }' id='next-move-symbol'></div>wins!`);
         updateResults();
     };
@@ -159,6 +174,7 @@ $(document).ready(function () {
     };
 
     function clearBoard () {
+        // removes symbols from all played boxes and all added classes
         const $symbols = $smallBox.children();
         $symbols.fadeOut(400, function () {$symbols.remove();});
         $smallBox.removeClass('winner grey played');
@@ -174,9 +190,17 @@ $(document).ready(function () {
         $disputedResult.fadeOut(400, function () {$disputedResult.hide();});
     }
 
-    function runDumbAI () {
-        const dumbAIChose = dumbAI();
-        $('<div></div>').hide().addClass('square').appendTo($(`#${dumbAIChose}`)).fadeIn(200);
+    function checkIfAIShouldRun () {
+        if ($main.hasClass('ai-click') && whoIsPlaying() === 'square') {
+            runAI();
+        }
+    };
+
+    function runAI () {
+        // asks AI algorithm to pick a box to play then update it on board
+
+        const boxPickedByAI = randomPick();  // change which box picking algorithm to run here
+        $(`#${ boxPickedByAI }`).addClass('played').append($('<div></div>').hide().addClass('square').fadeIn(200));
         const [foundWin, winningCombo] = checkForWin('square');
         if (foundWin) {
             celebrateWin(winningCombo, 'square');
